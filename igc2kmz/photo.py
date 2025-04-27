@@ -17,25 +17,25 @@
 
 import datetime
 import os.path
-import urllib2
-import urlparse
+import urllib.request
+import urllib.parse
 
-from coord import Coord
-import exif
+from .coord import Coord
+from . import exif
 
 
 class Photo(object):
 
     def __init__(self, url, path=None):
         self.url = url
-        components = urlparse.urlparse(self.url)
+        components = urllib.parse.urlparse(self.url)
         self.name = os.path.splitext(os.path.basename(components.path))[0]
         if path:
-            file = open(path)
+            file = open(path, 'rb')
         else:
-            file = urllib2.urlopen(self.url) 
-            if file.info().typeheader != 'image/jpeg':
-                raise RuntimeError, '%s: not an image/jpeg' % self.url
+            file = urllib.request.urlopen(self.url)
+            if file.info().get_content_type() != 'image/jpeg':
+                raise RuntimeError('%s: not an image/jpeg' % self.url)
         self.jpeg = exif.JPEG(file)
         if 'DateTimeOriginal' in self.jpeg.exif:
             self.dt = exif.parse_datetime(self.jpeg.exif['DateTimeOriginal'])

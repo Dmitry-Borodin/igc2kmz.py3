@@ -20,9 +20,9 @@ import logging
 import os.path
 import re
 
-from coord import Coord
-from task import Task, Turnpoint
-import track
+from .coord import Coord
+from .task import Task, Turnpoint
+from . import track
 
 
 A_RECORD_RE = re.compile(r'A(.*)\Z')
@@ -61,9 +61,7 @@ class Metaclass(type):
         return result
 
 
-class Record(object):
-
-    __metaclass__ = Metaclass
+class Record(object, metaclass=Metaclass):
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__,
@@ -78,7 +76,7 @@ class ARecord(Record):
         result = cls()
         m = A_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         result.value = m.group(1)
         igc.a = result.value
         return result
@@ -91,7 +89,7 @@ class BRecord(Record):
         result = cls()
         m = B_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         for key, value in igc.i.items():
             try:
                 setattr(result, key, int(line[value]))
@@ -133,7 +131,7 @@ class CRecord(Record):
             return None
         m = C2_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         result.lat = int(m.group(1)) + int(m.group(2)) / 60000.0
         if m.group(3) == 'S':
             result.lat *= -1
@@ -154,7 +152,7 @@ class ERecord(Record):
         result = cls()
         m = E_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         result.value = m.group(4)
         return result
 
@@ -166,7 +164,7 @@ class GRecord(Record):
         result = cls()
         m = G_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         result.value = m.group(1)
         igc.g.append(result.value)
         return result
@@ -184,7 +182,7 @@ class HRecord(Record):
             try:
                 result.date = datetime.date(2000 + year, month, day)
             except ValueError:
-                raise SyntaxError, line
+                raise SyntaxError(line)
             igc.hfdterecord = result
             return result
         m = HFFXA_RECORD_RE.match(line)
@@ -198,7 +196,7 @@ class HRecord(Record):
             result.source, result.key, result.value = m.groups()
             igc.h[result.key.lower()] = result.value
             return result
-        raise SyntaxError, line
+        raise SyntaxError(line)
 
 
 class IRecord(Record):
@@ -206,10 +204,10 @@ class IRecord(Record):
     @classmethod
     def parse(cls, line, igc):
         result = cls()
-        for i in xrange(0, int(line[1:3])):
+        for i in range(0, int(line[1:3])):
             m = I_RECORD_RE.match(line, 3 + 7 * i, 10 + 7 * i)
             if not m:
-                raise SyntaxError, line
+                raise SyntaxError(line)
             igc.i[m.group(3).lower()] = slice(int(m.group(1)) - 1,
                                               int(m.group(2)))
         return result
@@ -222,7 +220,7 @@ class LRecord(Record):
         result = cls()
         m = L_RECORD_RE.match(line)
         if not m:
-            raise SyntaxError, line
+            raise SyntaxError(line)
         igc.l.append(m.group(1))
         return result
 
@@ -280,4 +278,4 @@ class IGC(object):
 
 if __name__ == '__main__':
     import sys
-    print repr(IGC(sys.stdin).__dict__)
+    print(repr(IGC(sys.stdin).__dict__))

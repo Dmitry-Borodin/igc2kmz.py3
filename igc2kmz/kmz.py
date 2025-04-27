@@ -16,13 +16,10 @@
 
 
 import datetime
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+import io
 import zipfile
 
-import kml
+from . import kml
 
 
 class kmz(object):
@@ -68,18 +65,18 @@ class kmz(object):
         document = kml.Document()
         document.add(*self.roots)
         document.add(*self.elements)
-        string_io = StringIO()
+        string_io = io.StringIO()
         kml.kml(version, document).pretty_write(string_io)
         zi = zipfile.ZipInfo('doc.kml')
         zi.compress_type = zipfile.ZIP_DEFLATED
         zi.date_time = date_time
-        zi.external_attr = 0644 << 16
+        zi.external_attr = 0o644 << 16
         zf.writestr(zi, string_io.getvalue())
         string_io.close()
         for key, value in self.files.items():
             zi = zipfile.ZipInfo(key)
             zi.compress_type = zipfile.ZIP_DEFLATED
             zi.date_time = date_time
-            zi.external_attr = 0644 << 16
+            zi.external_attr = 0o644 << 16
             zf.writestr(zi, value)
         zf.close()

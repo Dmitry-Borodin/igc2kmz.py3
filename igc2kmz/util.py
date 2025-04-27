@@ -15,7 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import __builtin__
+import builtins
 import datetime
 import itertools
 import math
@@ -28,7 +28,7 @@ class Bounds(object):
         if isinstance(value, list):
             self.min = value[0]
             self.max = value[0]
-            for i in xrange(1, len(value)):
+            for i in range(1, len(value)):
                 if value[i] < self.min:
                     self.min = value[i]
                 elif value[i] > self.max:
@@ -74,7 +74,7 @@ class OpenStruct(object):
         self.__dict__.update(kwargs)
 
     def __iter__(self):
-        return self.__dict__.iteritems()
+        return iter(self.__dict__.items())
 
     def __repr__(self):
         return 'OpenStruct(%s)' % ', '.join('%s=%s' % (key, repr(value))
@@ -84,7 +84,7 @@ class OpenStruct(object):
 def runs(seq):
     generator = enumerate(seq)
     try:
-        start, current = generator.next()
+        start, current = next(generator)
     except StopIteration:
         return
     index = 0
@@ -98,7 +98,7 @@ def runs(seq):
 def runs_where(seq):
     generator = enumerate(seq)
     try:
-        start, current = generator.next()
+        start, current = next(generator)
     except StopIteration:
         return
     index = 0
@@ -113,7 +113,7 @@ def runs_where(seq):
 
 def condense(seq, t, delta):
     try:
-        sl = seq.next()
+        sl = next(seq)
         start, stop = sl.start, sl.stop
     except StopIteration:
         return
@@ -140,7 +140,7 @@ def douglas_peucker(x, y, epsilon):
         c = x[left] * y[right] - x[right] * y[left]
         pivot = left + 1
         max_dist = abs(kx * x[pivot] + ky * y[pivot] + c)
-        for i in xrange(left + 2, right):
+        for i in range(left + 2, right):
             dist = abs(kx * x[i] + ky * y[i] + c)
             if dist > max_dist:
                 max_dist = dist
@@ -154,7 +154,7 @@ def douglas_peucker(x, y, epsilon):
     return sorted(indexes)
 
 
-def incr_douglas_peucker(x, y, epsilon, max_indexes=sys.maxint):
+def incr_douglas_peucker(x, y, epsilon, max_indexes=sys.maxsize):
     indexes = set([0])
     queue = [(0, len(x) - 1)]
     i = 0
@@ -168,7 +168,7 @@ def incr_douglas_peucker(x, y, epsilon, max_indexes=sys.maxint):
         c = x[left] * y[right] - x[right] * y[left]
         pivot = left + 1
         max_dist = abs(kx * x[pivot] + ky * y[pivot] + c)
-        for j in xrange(left + 2, right):
+        for j in range(left + 2, right):
             dist = abs(kx * x[j] + ky * y[j] + c)
             if dist > max_dist:
                 max_dist = dist
@@ -184,10 +184,12 @@ def incr_douglas_peucker(x, y, epsilon, max_indexes=sys.maxint):
     return sorted(indexes)
 
 
-def bsearch(seq, value, cmp=__builtin__.cmp):
+def bsearch(seq, value, cmp=None):
+    if cmp is None:
+        cmp = lambda a, b: (a > b) - (a < b)
     left, right = 0, len(seq)
     while left <= right:
-        middle = (left + right) / 2
+        middle = (left + right) // 2
         direction = cmp(value, seq[middle])
         if direction < 0:
             right = middle - 1
@@ -198,11 +200,13 @@ def bsearch(seq, value, cmp=__builtin__.cmp):
     return None
 
 
-def find_first_ge(seq, value, cmp=__builtin__.cmp):
+def find_first_ge(seq, value, cmp=None):
+    if cmp is None:
+        cmp = lambda a, b: (a > b) - (a < b)
     left = 0
     right = len(seq)
     while left < right:
-        middle = (left + right) / 2
+        middle = (left + right) // 2
         direction = cmp(value, seq[middle])
         if direction <= 0:
             right = middle
@@ -219,7 +223,7 @@ def pairwise(iterable):
     a, b = itertools.tee(iterable)
     for elem in b:
         break
-    return itertools.izip(a, b)
+    return zip(a, b)
 
 
 def salient(seq, epsilon=0):
@@ -230,7 +234,7 @@ def salient(seq, epsilon=0):
         left, right = start, stop
         if seq[start] <= seq[stop]:
             max_index = start
-            for i in xrange(start + 1, stop + 1):
+            for i in range(start + 1, stop + 1):
                 if seq[i] > seq[max_index]:
                     max_index = i
                 elif seq[max_index] - seq[i] > delta:
@@ -238,7 +242,7 @@ def salient(seq, epsilon=0):
                     delta = seq[max_index] - seq[i]
         if seq[start] >= seq[stop]:
             min_index = start
-            for i in xrange(start + 1, stop + 1):
+            for i in range(start + 1, stop + 1):
                 if seq[i] < seq[min_index]:
                     min_index = i
                 elif seq[i] - seq[min_index] > delta:
@@ -266,7 +270,7 @@ def salient2(seq, epsilons):
         left, right = start, stop
         if seq[start] <= seq[stop]:
             max_index = start
-            for i in xrange(start + 1, stop + 1):
+            for i in range(start + 1, stop + 1):
                 if seq[i] > seq[max_index]:
                     max_index = i
                 elif seq[max_index] - seq[i] > delta:
@@ -274,7 +278,7 @@ def salient2(seq, epsilons):
                     delta = seq[max_index] - seq[i]
         if seq[start] >= seq[stop]:
             min_index = start
-            for i in xrange(start + 1, stop + 1):
+            for i in range(start + 1, stop + 1):
                 if seq[i] < seq[min_index]:
                     min_index = i
                 elif seq[i] - seq[min_index] > delta:

@@ -19,8 +19,8 @@ import datetime
 import struct
 
 
-BIG_ENDIAN, = struct.unpack('=H', 'MM')
-LITTLE_ENDIAN, = struct.unpack('=H', 'II')
+BIG_ENDIAN, = struct.unpack('=H', b'MM')
+LITTLE_ENDIAN, = struct.unpack('=H', b'II')
 BYTE_ORDER_CHAR = {BIG_ENDIAN: '>', LITTLE_ENDIAN: '<'}
 
 BYTE = 1
@@ -61,23 +61,22 @@ class TIFF(object):
         self.data = data
         self.byte_order, = struct.unpack('=H', self.data[0:2])
         if not self.byte_order in BYTE_ORDER_CHAR:
-            raise SyntaxError, 'Unsupported byte order %s' \
-                               % repr(self.data[6:8])
+            raise SyntaxError('Unsupported byte order %s' % repr(self.data[6:8]))
         self.byte_order_char = BYTE_ORDER_CHAR[self.byte_order]
         self.version, self.first_ifd_offset = \
             struct.unpack(self.byte_order_char + 'HL', self.data[2:8])
         if self.version != 42:
-            raise SyntaxError, 'Unsupported version %s' % self.version
+            raise SyntaxError('Unsupported version %s' % self.version)
 
     def ifd_tags(self, offset):
         n, = struct.unpack(self.byte_order_char + 'H',
                            self.data[offset:offset + 2])
-        for i in xrange(0, n):
+        for i in range(0, n):
             sl = slice(offset + 2 + 12 * i, offset + 2 + 12 * i + 8)
             tag, data_type, count = struct.unpack(self.byte_order_char + 'HHL',
                                                   self.data[sl])
             if not data_type in DATA_TYPE_LENGTH:
-                raise SyntaxError, 'Unrecognised data type %d' % data_type
+                raise SyntaxError('Unrecognised data type %d' % data_type)
             data_length = DATA_TYPE_LENGTH[data_type] * count
             if data_length > 4:
                 sl = slice(offset + 2 + 12 * i + 8, offset + 2 + 12 * i + 12)
@@ -314,12 +313,12 @@ class JPEG(object):
             elif tag in [SOF0, SOF2]:
                 self.height, self.width = struct.unpack('>HH', data[1:5])
         if self.height is None or self.width is None:
-            raise SyntaxError, "Missing SOF"
+            raise SyntaxError('Missing SOF')
 
     @classmethod
     def chunks(self, file):
         if struct.unpack('>H', file.read(2)) != (SOI,):
-            raise SyntaxError, "Missing SOI header"
+            raise SyntaxError('Missing SOI header')
         tag, = struct.unpack('>H', file.read(2))
         while tag > 0xff00:
             size, = struct.unpack('>H', file.read(2))

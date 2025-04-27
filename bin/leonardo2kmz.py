@@ -214,7 +214,7 @@ def main(argv):
             multiplier = round(score / distance, 2)
             circuit = CIRCUIT[flight_score_row.type]
             tps = []
-            for i in xrange(1, 8):
+            for i in range(1, 8):
                 m = B_RECORD_RE.match(flight_score_row['turnpoint%d' % i])
                 if not m:
                     continue

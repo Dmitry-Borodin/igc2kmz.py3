@@ -29,8 +29,8 @@ def main(argv):
     for arg in argv[1:]:
         try:
             igc2kmz.igc.IGC(open(arg))
-        except igc2kmz.igc.SyntaxError, line:
-            print "%s: %s" % (arg, line)
+        except igc2kmz.igc.SyntaxError as line:
+            print("%s: %s" % (arg, line))
 
 
 if __name__ == '__main__':

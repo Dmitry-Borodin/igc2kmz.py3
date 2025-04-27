@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 #   IGC to task converter
 #   Copyright (C) 2008  Tom Payne

@@ -24,9 +24,9 @@ try:
 except ImportError:
     from xml.etree.ElementTree import ElementTree, parse
 
-from coord import Coord
-from etree import tag
-from gpx import GPX_DATETIME_FORMAT
+from .coord import Coord
+from .etree import tag
+from .gpx import GPX_DATETIME_FORMAT
 
 
 class Turnpoint(object):

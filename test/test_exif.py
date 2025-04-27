@@ -42,8 +42,8 @@ def main(argv):
                 elif isinstance(tag, str) and tag.startswith('DateTime'):
                     jpeg.exif[tag] = igc2kmz.exif.parse_datetime(value)
             pprint.pprint(jpeg.__dict__)
-        except igc2kmz.exif.SyntaxError, line:
-            print "%s: %s" % (arg, line)
+        except igc2kmz.exif.SyntaxError as line:
+            print("%s: %s" % (arg, line))
 
 
 if __name__ == '__main__':

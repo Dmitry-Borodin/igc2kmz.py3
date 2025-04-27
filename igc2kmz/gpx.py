@@ -23,9 +23,9 @@ try:
 except ImportError:
     from xml.etree.ElementTree import parse
 
-from coord import Coord
-from track import Track
-from waypoint import Waypoint
+from .coord import Coord
+from .track import Track
+from .waypoint import Waypoint
 
 
 GPX_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'

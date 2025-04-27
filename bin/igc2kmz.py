@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 #   IGC to Google Earth converter
 #   Copyright (C) 2008  Tom Payne
@@ -48,7 +48,7 @@ def add_flight(option, opt, value, parser):
     elif ext.lower() == '.gpx':
         track = GPX(open(value)).track()
     else:
-        raise RuntimeError, 'unsupported file type %s' % repr(ext)
+        raise RuntimeError('unsupported file type %s' % repr(ext))
     parser.values.flights.append(Flight(track))
 
 

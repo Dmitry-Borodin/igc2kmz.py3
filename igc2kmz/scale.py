@@ -19,7 +19,7 @@ import datetime
 import itertools
 import time
 
-import util
+from . import util
 
 
 class Scale(object):
@@ -76,7 +76,7 @@ class Scale(object):
 
     def colors(self, n=32):
         """Return the colors."""
-        return [self.gradient(float(i) / (n - 1)) for i in xrange(0, n)]
+        return [self.gradient(float(i) / (n - 1)) for i in range(0, n)]
 
 
 class ZeroCenteredScale(Scale):
@@ -106,9 +106,9 @@ class TimeScale(Scale):
             steps = [1, 5, 15, 30, 60,
                      5 * 60, 15 * 60, 30 * 60,
                      3600, 3 * 3600, 6 * 3600, 12 * 3600]
-            return itertools.imap(lambda s: datetime.timedelta(0, s),
-                                  itertools.dropwhile(lambda s: s < step,
-                                                      steps))
+            return map(lambda s: datetime.timedelta(0, s),
+                       itertools.dropwhile(lambda s: s < step,
+                                           steps))
         lower, upper = range
         if step:
             for step in steps(step):

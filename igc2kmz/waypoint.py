@@ -17,7 +17,7 @@
 
 from math import pi
 
-from coord import Coord
+from .coord import Coord
 
 
 class Waypoint(Coord):

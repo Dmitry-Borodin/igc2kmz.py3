@@ -30,9 +30,8 @@ class Metaclass(type):
         return result
 
 
-class _Element(object):
+class _Element(object, metaclass=Metaclass):
     """KML element base class."""
-    __metaclass__ = Metaclass
 
     def name(self):
         """Return name."""
@@ -173,7 +172,7 @@ class color(_SimpleElement):
     def __init__(self, rgba):
         if isinstance(rgba, tuple):
             r, g, b, a = rgba
-            rgba = '%02x%02x%02x%02x' % (255 * a, 255 * b, 255 * g, 255 * r)
+            rgba = '%02x%02x%02x%02x' % (int(255 * a), int(255 * b), int(255 * g), int(255 * r))
         _SimpleElement.__init__(self, rgba)
 
 
@@ -187,7 +186,7 @@ class coordinates(_SimpleElement):
     def circle(cls, center, radius, ele=None, error=0.1):
         decimation = int(ceil(pi / acos((radius - error) / (radius + error))))
         coords = []
-        for i in xrange(0, decimation + 1):
+        for i in range(0, decimation + 1):
             coord = center.coord_at(-2.0 * pi * i / decimation, radius + error)
             if ele:
                 coord.ele = ele
