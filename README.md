@@ -1,4 +1,4 @@
-igc2kmz IGC to Google Earth converter
+igc2kmz IGC to Google Earth converter. Python3 version.
 =====================================
 
 igc2kmz converts paraglider and hang glider track logs into Google Earth KML format with lots of features, notably:
@@ -25,20 +25,7 @@ It is designed to run on XC league servers, and as such is not designed to be di
 Requirements
 ------------
 
-* [Python](http://www.python.org/) version 2.*, not version 3.0
-
-
-Get the code
-------------
-
-Download either the [zip archive](http://github.com/twpayne/igc2kmz/zipball/master) or the [tar.gz archive](http://github.com/twpayne/igc2kmz/tarball/master).
-
-Unpack this archive somewhere.
-
-If you want to track development then you can checkout the source code with [git](http://git.or.cz/) instead of downloading an archive:
-
-	git clone git://github.com/twpayne/igc2kmz.git
-
+* [Python](http://www.python.org/) version 3.
 
 Run it
 ------
