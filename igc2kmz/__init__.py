@@ -594,6 +594,8 @@ class Flight(object):
         folder_style_url = globals.stock.check_hide_children_style.url()
         folder = kml.Folder(name=title.capitalize() + "s",
                             styleUrl=folder_style_url, visibility=0)
+        up_tack_display = UP_TACK.decode('utf_8') \
+            if isinstance(UP_TACK, bytes) else UP_TACK
         for sl in slices:
             coord0 = self.track.coords[sl.start]
             coord1 = self.track.coords[sl.stop]
@@ -608,19 +610,28 @@ class Flight(object):
                     total_dz_positive += dz
                 elif dz < 0:
                     total_dz_negative += dz
-                peak_climb.update(float(dz) / dt)
+                if dt > 0:
+                    peak_climb.update(float(dz) / dt)
             climb = util.Bounds(self.track.climb[sl])
             dz = float(self.track.coords[sl.stop].ele
                        - self.track.coords[sl.start].ele)
-            dt = self.track.t[sl.stop] - self.track.t[sl.start]
+            total_dt = self.track.t[sl.stop] - self.track.t[sl.start]
             dp = coord0.distance_to(coord1)
             theta = coord0.initial_bearing_to(coord1)
             dict = {}
             dict['altitude_change'] = int(round(dz))
-            dict['average_climb'] = round(dz / dt, 1)
+            if total_dt > 0:
+                average_climb = round(dz / total_dt, 1)
+                average_speed = round(3.6 * dp / total_dt, 1)
+                rate_value = dz / total_dt
+            else:
+                average_climb = UP_TACK
+                average_speed = UP_TACK
+                rate_value = None
+            dict['average_climb'] = average_climb
             dict['maximum_climb'] = round(climb.max, 1)
             dict['peak_climb'] = round(peak_climb.max, 1)
-            divisor = dt * climb.max
+            divisor = total_dt * climb.max
             if divisor == 0:
                 dict['efficiency'] = UP_TACK
             else:
@@ -628,7 +639,7 @@ class Flight(object):
             dict['distance'] = round(dp / 1000.0, 1)
             average_ld = round(-dp / dz, 1) if dz < 0 else INFINITY
             dict['average_ld'] = average_ld
-            dict['average_speed'] = round(3.6 * dp / dt, 1)
+            dict['average_speed'] = average_speed
             dict['maximum_descent'] = round(climb.min, 1)
             dict['peak_descent'] = round(peak_climb.min, 1)
             dict['start_altitude'] = coord0.ele
@@ -644,12 +655,22 @@ class Flight(object):
             dict['drift_direction'] = rad_to_cardinal(theta + pi)
             extended_data = kml.ExtendedData.dict(dict)
             if title == 'thermal':
-                name = '%dm at %.1fm/s' % (dz, dz / dt)
+                if rate_value is None:
+                    name = '%dm at %s' % (dz, '%s m/s' % up_tack_display)
+                else:
+                    name = '%dm at %.1fm/s' % (dz, rate_value)
             elif title == 'glide':
-                name = '%.1fkm at %s:1, %dkm/h' \
-                       % (dp / 1000.0, average_ld, round(3.6 * dp / dt))
+                if average_speed == UP_TACK:
+                    speed_text = '%s km/h' % up_tack_display
+                else:
+                    speed_text = '%dkm/h' % round(average_speed)
+                name = '%.1fkm at %s:1, %s' \
+                       % (dp / 1000.0, average_ld, speed_text)
             elif title == 'dive':
-                name = '%dm at %.1fm/s' % (-dz, dz / dt)
+                if rate_value is None:
+                    name = '%dm at %s' % (-dz, '%s m/s' % up_tack_display)
+                else:
+                    name = '%dm at %.1fm/s' % (-dz, rate_value)
             placemark = kml.Placemark(point, extended_data, name=name,
                                       Snippet=None, styleUrl=style_url)
             folder.add(placemark)
