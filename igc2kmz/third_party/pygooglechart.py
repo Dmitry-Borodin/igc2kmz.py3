@@ -282,7 +282,7 @@ class Chart(object):
     of the chart. legend requires a list that corresponds to datasets.
     """
 
-    BASE_URL = 'http://chart.apis.google.com/chart?'
+    BASE_URL = 'https://chart.googleapis.com/chart?'
     BACKGROUND = 'bg'
     CHART = 'c'
     ALPHA = 'a'
@@ -1084,4 +1084,3 @@ class ChartGrammar(object):
 
     def download(self):
         pass
-

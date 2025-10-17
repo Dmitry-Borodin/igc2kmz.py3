@@ -21,8 +21,12 @@ from itertools import cycle
 import operator
 import os
 import re
+import struct
 import unicodedata
 import urllib.parse
+import urllib.error
+import urllib.request
+import zlib
 
 from .third_party import pygooglechart
 
@@ -703,9 +707,142 @@ class Flight(object):
         chart.add_data([values[i] for i in indexes])
         return chart
 
+    def _render_graph_image(self, globals, values, scale):
+        width = globals.graph_width
+        height = globals.graph_height
+        if width <= 0 or height <= 0:
+            return None
+        if not values or len(values) < 2:
+            return None
+        n = min(len(values), len(self.track.t))
+        if n < 2:
+            return None
+        times = self.track.t[:n]
+        vals = values[:n]
+        min_t, max_t = times[0], times[-1]
+        if max_t <= min_t:
+            return None
+        y_min, y_max = scale.range
+        if y_max <= y_min:
+            y_max = y_min + 1.0
+        left, right, top, bottom = 50, 20, 20, 30
+        inner_width = width - left - right
+        inner_height = height - top - bottom
+        if inner_width <= 0 or inner_height <= 0:
+            return None
+        stride = width * 4
+        pixels = bytearray(width * height * 4)
+        row = bytes([0xff, 0xff, 0xff, 0xcc]) * width
+        for y in range(height):
+            start = y * stride
+            pixels[start:start + stride] = row
+
+        def clamp(value, lower, upper):
+            if value < lower:
+                return lower
+            if value > upper:
+                return upper
+            return value
+
+        def set_pixel(x, y, color):
+            if 0 <= x < width and 0 <= y < height:
+                index = (y * width + x) * 4
+                pixels[index:index + 4] = color
+
+        def draw_line(x0, y0, x1, y1, color):
+            x0 = int(round(x0))
+            y0 = int(round(y0))
+            x1 = int(round(x1))
+            y1 = int(round(y1))
+            dx = abs(x1 - x0)
+            dy = -abs(y1 - y0)
+            sx = 1 if x0 < x1 else -1
+            sy = 1 if y0 < y1 else -1
+            err = dx + dy
+            while True:
+                set_pixel(x0, y0, color)
+                if x0 == x1 and y0 == y1:
+                    break
+                e2 = 2 * err
+                if e2 >= dy:
+                    err += dy
+                    x0 += sx
+                if e2 <= dx:
+                    err += dx
+                    y0 += sy
+
+        graph_left = left
+        graph_right = width - right - 1
+        graph_top = top
+        graph_bottom = height - bottom - 1
+        axis_color = bytes([80, 80, 80, 255])
+        grid_color = bytes([180, 180, 180, 160])
+        data_color = bytes([30, 136, 229, 255])
+
+        grid_divisions = 5
+        for i in range(grid_divisions + 1):
+            y = graph_top + int(round(inner_height * i / grid_divisions))
+            draw_line(graph_left, y, graph_right, y, grid_color)
+        for i in range(grid_divisions + 1):
+            x = graph_left + int(round(inner_width * i / grid_divisions))
+            draw_line(x, graph_top, x, graph_bottom, grid_color)
+
+        draw_line(graph_left, graph_top, graph_left, graph_bottom, axis_color)
+        draw_line(graph_left, graph_bottom, graph_right, graph_bottom,
+                  axis_color)
+
+        def project_x(t):
+            return graph_left + (t - min_t) * inner_width / (max_t - min_t)
+
+        def project_y(v):
+            normalized = (clamp(v, y_min, y_max) - y_min) / (y_max - y_min)
+            return graph_top + (1.0 - normalized) * inner_height
+
+        previous = None
+        for t, value in zip(times, vals):
+            if value is None:
+                previous = None
+                continue
+            x = project_x(t)
+            y = project_y(value)
+            if previous is not None:
+                draw_line(previous[0], previous[1], x, y, data_color)
+                draw_line(previous[0], previous[1] + 1, x, y + 1, data_color)
+            else:
+                set_pixel(int(round(x)), int(round(y)), data_color)
+            previous = (x, y)
+
+        def png_chunk(tag, data):
+            chunk_type = tag.encode('ascii')
+            length = struct.pack('!I', len(data))
+            crc = struct.pack('!I', zlib.crc32(chunk_type + data) & 0xffffffff)
+            return length + chunk_type + data + crc
+
+        ihdr = struct.pack('!IIBBBBB', width, height, 8, 6, 0, 0, 0)
+        raw = bytearray()
+        for y in range(height):
+            start = y * stride
+            raw.append(0)
+            raw.extend(pixels[start:start + stride])
+        compressed = zlib.compress(bytes(raw), level=9)
+        return (b'\x89PNG\r\n\x1a\n'
+                + png_chunk('IHDR', ihdr)
+                + png_chunk('IDAT', compressed)
+                + png_chunk('IEND', b''))
+
     def make_graph(self, globals, values, scale):
-        href = self.make_graph_chart(globals, values, scale).get_url()
-        icon = kml.Icon(href=kml.CDATA(href))
+        safe_name = re.sub(r'[^0-9A-Za-z._-]', '_',
+                           '%s-%s' % (self.track.filename, scale.title))
+        image_path = os.path.join('images', 'graphs', safe_name + '.png')
+        png_data = self._render_graph_image(globals, values, scale)
+        icon = None
+        if png_data:
+            globals.stock.kmz.add_files({image_path: png_data})
+            icon = kml.Icon(href=image_path)
+        else:
+            chart = self.make_graph_chart(globals, values, scale)
+            href = chart.get_url()
+            icon = kml.Icon(href=kml.CDATA(href))
         overlay_xy = kml.overlayXY(x=0, xunits='fraction',
                                    y=0, yunits='fraction')
         screen_xy = kml.screenXY(x=0, xunits='fraction', y=16, yunits='pixels')
@@ -911,4 +1048,5 @@ def flights2kmz(flights, roots=[], tz_offset=0, task=None):
         result.add_siblings(make_task_folder(globals, globals.task))
     for flight in flights:
         result.add_siblings(flight.to_kmz(globals))
+    result.add_files(stock.kmz.files)
     return result
