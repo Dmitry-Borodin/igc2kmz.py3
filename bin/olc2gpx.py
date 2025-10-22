@@ -90,7 +90,10 @@ def main(argv):
         m = OUT_FLIGHT_POINTS_RE.match(line)
         if m:
             route.score = float(m.group(1))
-            route.multiplier = route.score / route.distance
+            if route.distance and route.distance != 0.0:
+                route.multiplier = route.score / route.distance
+            else:
+                route.multiplier = 0.0
             continue
         m = OUT_P_RE.match(line)
         if m:
@@ -117,9 +120,16 @@ def main(argv):
     xc = XC(routes)
     with gpx_tag(TreeBuilder()) as tb:
         element = xc.build_tree(tb).close()
-    output = open(options.output, 'w') if options.output else sys.stdout
-    output.write('<?xml version="1.0" encoding="UTF-8"?>')
-    ElementTree(element).write(output)
+    if options.output:
+        output = open(options.output, 'wb')
+        close_output = True
+    else:
+        output = sys.stdout.buffer
+        close_output = False
+    output.write(b'<?xml version="1.0" encoding="UTF-8"?>')
+    ElementTree(element).write(output, encoding='UTF-8')
+    if close_output:
+        output.close()
 
 
 if __name__ == '__main__':

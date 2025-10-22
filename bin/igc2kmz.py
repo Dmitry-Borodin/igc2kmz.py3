@@ -44,7 +44,7 @@ def add_flight(option, opt, value, parser):
     if default_output is None:
         default_output = basename + '.kmz'
     if ext.lower() == '.igc':
-        track = IGC(open(value)).track()
+        track = IGC(open(value, encoding='latin-1', errors='ignore')).track()
     elif ext.lower() == '.gpx':
         track = GPX(open(value)).track()
     else:

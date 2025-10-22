@@ -50,7 +50,7 @@ class Turnpoint(object):
 
     @classmethod
     def from_element(cls, rtept, namespace):
-        name = rtept.findtext('{%s}name' % namespace).encode('utf_8')
+        name = rtept.findtext('{%s}name' % namespace)
         lat = float(rtept.get('lat'))
         lon = float(rtept.get('lon'))
         ele_tag = rtept.find('{%s}ele' % namespace)
@@ -94,10 +94,10 @@ class Route(object):
 
     @classmethod
     def from_element(cls, rte, namespace):
-        name = rte.findtext('{%s}name' % namespace).encode('utf_8')
+        name = rte.findtext('{%s}name' % namespace)
         extensions_tag = rte.find('{%s}extensions' % namespace)
         league_text = extensions_tag.findtext('{%s}league' % namespace)
-        league = league_text.encode('utf_8')
+        league = league_text
         distance_text = extensions_tag.findtext('{%s}distance' % namespace)
         distance = float(distance_text)
         multiplier_text = extensions_tag.findtext('{%s}multiplier' % namespace)

@@ -498,8 +498,12 @@ class Flight(object):
             th = '%s %s %s' \
                  % (route.tps[i].name, RIGHTWARDS_ARROW, route.tps[j].name)
             if percentage:
-                td = '%.1fkm (%.1f%%)' \
-                     % (distance / 1000.0, 0.1 * distance / route.distance)
+                if route.distance:
+                    td = '%.1fkm (%.1f%%)' \
+                         % (distance / 1000.0,
+                            0.1 * distance / route.distance)
+                else:
+                    td = '%.1fkm' % (distance / 1000.0)
             else:
                 td = '%.1fkm' % (distance / 1000.0)
             return (th, td)
@@ -531,7 +535,7 @@ class Flight(object):
             return kmz.kmz()
         style_url = globals.stock.radio_folder_style.url()
         folder = kml.Folder(name='Cross country', open=0, styleUrl=style_url)
-        folder.add(globals.stock.invisible_none_folder)
+        folder.add(globals.stock.visible_none_folder)
         for rank, route in enumerate(sorted(self.xc.routes,
                                             key=operator.attrgetter('score'),
                                             reverse=True)):
@@ -554,15 +558,19 @@ class Flight(object):
                          '%s %.2f points/km' % (MULTIPLICATION_SIGN,
                                                 route.multiplier)))
             rows.append(('Score', '<b>%.2f points</b>' % route.score))
-            speed = 3600.0 * route.distance \
-                    / (route.tps[-1].coord.dt - route.tps[0].coord.dt).seconds
-            rows.append(('Average speed', '%.1fkm/h' % speed))
+            delta_seconds = (route.tps[-1].coord.dt
+                             - route.tps[0].coord.dt).seconds
+            if route.distance and delta_seconds:
+                speed = 3600.0 * route.distance / delta_seconds
+                rows.append(('Average speed', '%.1fkm/h' % speed))
+            else:
+                rows.append(('Average speed', UP_TACK))
             if route.circuit:
                 rows.append(make_row(route, -1, 0))
             table = make_table(rows)
             name = '%.1fkm %s (%.2f points)' \
                    % (route.distance, route.name, route.score)
-            visibility = 1 if rank == 0 else 0
+            visibility = 0
             style_url = globals.stock.check_hide_children_style.url()
             route_folder = kml.Folder(name=name, description=kml.CDATA(table),
                                       Snippet=None, styleUrl=style_url,
@@ -942,7 +950,8 @@ def make_task_folder(globals, task):
     snippet = '%.1fkm via %d turnpoints' % (total / 1000.0, count)
     style_url = globals.stock.check_hide_children_style.url()
     folder = kml.Folder(name=name, description=kml.CDATA(table),
-                        Snippet=snippet, styleUrl=style_url)
+                        Snippet=snippet, styleUrl=style_url, visibility=0,
+                        open=0)
     style_url = globals.stock.xc_style.url()
     done = set()
     for tp in task.tps:
