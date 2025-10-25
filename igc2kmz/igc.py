@@ -113,6 +113,8 @@ class BRecord(Record):
             result.lon += int(line[igc.i['lod']]) / 6000000.0
         if m.group(9) == 'W':
             result.lon *= -1
+        if abs(result.lat) < 1e-3 and abs(result.lon) < 1e-3:
+            return None
         result.validity = m.group(10)
         result.alt = int(m.group(11))
         result.ele = int(m.group(12))
